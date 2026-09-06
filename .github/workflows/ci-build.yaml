@@ -29,7 +29,7 @@ on:
 env:
   # The one variable that separates the arms: on baseline, action-checkout
   # skips its Set up Chalk step entirely.
-  CHALK_ON: ${{ github.event_name == 'workflow_dispatch' && inputs.leg != 'baseline' }}
+  CHALK_ON: ${{ inputs.leg == 'instrumented' }}
   # Golang version to use across CI steps
   # renovate: datasource=golang-version packageName=golang
   GOLANG_VERSION: '1.27.1'
@@ -51,9 +51,9 @@ jobs:
     name: Detect changed files
     runs-on: ubuntu-24.04
     outputs:
-      backend: ${{ github.event_name == 'workflow_dispatch' && 'true' || steps.filter.outputs.backend_any_changed }}
-      frontend: ${{ github.event_name == 'workflow_dispatch' && 'true' || steps.filter.outputs.frontend_any_changed }}
-      docs: ${{ github.event_name == 'workflow_dispatch' && 'true' || steps.filter.outputs.docs_any_changed }}
+      backend: ${{ 'push' == 'workflow_dispatch' && 'true' || steps.filter.outputs.backend_any_changed }}
+      frontend: ${{ 'push' == 'workflow_dispatch' && 'true' || steps.filter.outputs.frontend_any_changed }}
+      docs: ${{ 'push' == 'workflow_dispatch' && 'true' || steps.filter.outputs.docs_any_changed }}
     steps:
       - name: Harden the runner (Audit all outbound calls)
         if: ${{ vars.disable_harden_runner != 'true' }}
@@ -666,7 +666,7 @@ jobs:
           CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
       - name: Upload test results to Codecov
         # Codecov uploads test results to Codecov.io on upstream master branch.
-        if: github.repository == 'curiosity-tests/argo-cd' && github.ref == 'refs/heads/master' && github.event_name == 'push'
+        if: github.repository == 'curiosity-tests/argo-cd' && github.ref == 'refs/heads/master' && 'push' == 'push'
         uses: codecov/codecov-action@fb8b3582c8e4def4969c97caa2f19720cb33a72f # v7.0.0
         with:
           version: v11.2.8 # https://github.com/getsentry/prevent-cli/releases/tag/v11.2.8
@@ -683,7 +683,7 @@ jobs:
   test-e2e:
     name: Run end-to-end tests
     if: ${{ needs.changes.outputs.backend == 'true' }}
-    runs-on: ${{ github.repository == 'argoproj/argo-cd' && 'oracle-vm-16cpu-64gb-x86-64' || 'ubuntu-24.04' }}
+    runs-on: ${{ github.repository == 'curiosity-tests/argo-cd' && 'oracle-vm-16cpu-64gb-x86-64' || 'ubuntu-24.04' }}
     strategy:
       fail-fast: false
       matrix:
